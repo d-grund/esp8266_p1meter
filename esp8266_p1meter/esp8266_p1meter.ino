@@ -2,10 +2,6 @@
 // * Include settings
 #include "settings.h"
 
-
-
-
-
 // **********************************
 // * Setup Main                     *
 // **********************************
@@ -17,13 +13,13 @@ void setup()
 
     // Setup a hw serial connection for communication with the P1 meter and logging (not using inversion)
     Serial.begin(BAUD_RATE, SERIAL_8N1, SERIAL_FULL);
-    Serial.println("");
-    Serial.println("Swapping UART0 RX to inverted");
+    server_println("");
+    server_println("Swapping UART0 RX to inverted");
     Serial.flush();
 
     // Invert the RX serialport by setting a register value, this way the TX might continue normally allowing the serial monitor to read println's
     USC0(UART0) = USC0(UART0) | BIT(UCRXI);
-    Serial.println("Serial port is ready to recieve.");
+    server_println("Serial port is ready to recieve.");
 
     // * Set led pin as output
     pinMode(LED_BUILTIN, OUTPUT);
@@ -32,6 +28,7 @@ void setup()
     ticker.attach(0.6, tick);
 
     // * Get MQTT Server settings
+    // write_eeprom(134, 1, "0"); // For testing, force config every reboot, remove this line for production
     String settings_available = read_eeprom(134, 1);
 
     if (settings_available == "1")
@@ -77,7 +74,7 @@ void setup()
     }
     else if (!wifiManager.autoConnect())
     {
-        Serial.println(F("Failed to connect to WIFI and hit timeout"));
+        server_println(F("Failed to connect to WIFI and hit timeout"));
 
         // * Reset and try again, or maybe put it to deep sleep
         ESP.reset();
@@ -93,7 +90,7 @@ void setup()
     // * Save the custom parameters to FS
     if (shouldSaveConfig)
     {
-        Serial.println(F("Saving WiFiManager config"));
+        server_println(F("Saving WiFiManager config"));
 
         write_eeprom(0, 64, MQTT_HOST);   // * 0-63
         write_eeprom(64, 6, MQTT_PORT);   // * 64-69
@@ -104,7 +101,7 @@ void setup()
     }
 
     // * If you get here you have connected to the WiFi
-    Serial.println(F("Connected to WIFI..."));
+    server_println(F("Connected to WIFI..."));
 
     // * Keep LED on
     ticker.detach();
@@ -121,18 +118,19 @@ void setup()
     setup_mqqt();
  
     // * Setup MQTT
-    Serial.printf("MQTT connecting to: %s:%s\n", MQTT_HOST, MQTT_PORT);
-    server_println("MQTT connecting to: " + String(MQTT_HOST) + String( MQTT_PORT));
+    server_println("MQTT connecting to: " + String(MQTT_HOST) + ":" + String(MQTT_PORT));
     IPAddress resolvedIP;
     if(!WiFi.hostByName(MQTT_HOST, resolvedIP))
     {
-      Serial.printf("Unable to resolve host, connect using name: %s\n",MQTT_HOST);
+      server_println("Unable to resolve host, connect using name: " + String(MQTT_HOST));
       mqtt_client.setServer(MQTT_HOST, atoi(MQTT_PORT));
     }
     else
     {
       mqtt_client.setServer(resolvedIP, atoi(MQTT_PORT));
     }
+    server.begin();
+    server_println("Web server started, open " + WiFi.localIP().toString() + " in a web browser");
 
 }
 
@@ -168,36 +166,8 @@ void loop()
     }
 
 
-    if ( !mqtt_client.connected())
-    {
-        if (now - LAST_RECONNECT_ATTEMPT > 5000 )
-        {
-            LAST_RECONNECT_ATTEMPT = now;
-            MQTT_RECONNECT_TRIES++;
-            int reconnectStatus = mqtt_reconnect();
-
-            if (reconnectStatus == 0)
-            {
-                LAST_RECONNECT_ATTEMPT = 0;
-                MQTT_RECONNECT_TRIES = 0;
-            }
-            else
-            {
-                if(reconnectStatus ==5 )
-                {
-                  Serial.println(" Access denied connecting to MQTT entering config mode");
-                  enterConfigMode();
-                }
-                
-                delay(5000);
-
-            }
-        }
-    }
-    else
-    {
-        mqtt_client.loop();
-    }
+    // Enhanced MQTT connection handling with exponential backoff
+    handle_mqtt_connection(now);
     
     if (now - LAST_UPDATE_SENT > UPDATE_INTERVAL) {
         read_p1_hardwareserial();

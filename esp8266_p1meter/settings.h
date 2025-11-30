@@ -52,6 +52,7 @@ void save_wifi_config_callback ();
 void configModeCallback(WiFiManager *myWiFiManager);
 void server_sendto_client ( WiFiClient *client);
 void server_println(String message);
+void server_print(String message);
 // EEPROM
 String read_eeprom(int offset, int len);
 void write_eeprom(int offset, int len, String value);
@@ -81,12 +82,25 @@ void write_eeprom(int offset, int len, String value);
 
 // * MQTT network settings
 #define MQTT_MAX_RECONNECT_TRIES 20
+#define MQTT_BACKOFF_BASE 5000        // Base backoff time in milliseconds (5 seconds)
+#define MQTT_BACKOFF_MAX 300000       // Maximum backoff time in milliseconds (5 minutes)
 // * MQTT root topic
 #define MQTT_ROOT_TOPIC "sensors/power/p1meter"
+
+// * MQTT connection state enumeration (renamed to avoid conflict with PubSubClient macros)
+typedef enum {
+    MQTT_STATE_DISCONNECTED = 0,
+    MQTT_STATE_CONNECTING = 1,
+    MQTT_STATE_CONNECTED = 2,
+    MQTT_STATE_AUTH_FAILED = 3,
+    MQTT_STATE_MAX_RETRIES_EXCEEDED = 4
+} mqtt_state_t;
+
 // * MQTT Last reconnection counter
 extern long LAST_RECONNECT_ATTEMPT;
 extern long LAST_UPDATE_SENT;
 extern int MQTT_RECONNECT_TRIES;
+extern mqtt_state_t mqtt_connection_state;
 
 #if defined(MAIN) || defined(MQTT)
 // * To be filled with EEPROM data
@@ -137,7 +151,11 @@ extern long SHORT_POWER_PEAKS;
 // ******************************************
 extern bool shouldSaveConfig;
 
-
+// ******************************************
+// * MQTT Function Declarations             *
+// ******************************************
+void handle_mqtt_connection(unsigned long now);
+const char* mqtt_error_string(int error_code);
 
 
 #endif

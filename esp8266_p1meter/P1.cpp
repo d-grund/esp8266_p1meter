@@ -81,205 +81,182 @@ int FindCharInArrayRev(char array[], char c, int len)
 
 long getValue(char *buffer, int maxlen, char startchar, char endchar)
 {
-    int s = FindCharInArrayRev(buffer, startchar, maxlen - 2);
-    int l = FindCharInArrayRev(buffer, endchar, maxlen - 2) - s - 1;
+    // Find start and end delimiters with full buffer search
+    // (prevents missing delimiters near buffer end)
+    int s = FindCharInArrayRev(buffer, startchar, maxlen);
+    int e = FindCharInArrayRev(buffer, endchar, maxlen);
+    
+    // Validate delimiters found and in correct order
+    if (s < 0 || e < 0 || e <= s) {
+        return 0;
+    }
+    
+    int l = e - s - 1;
+    
+    // Validate extracted string length
+    if (l <= 0 || l >= 16) {
+        return 0;
+    }
 
     char res[16];
     memset(res, 0, sizeof(res));
 
-    if (strncpy(res, buffer + s + 1, l))
+    strncpy(res, buffer + s + 1, l);
+    res[l] = 0;
+    
+    if (endchar == '*')
     {
-        if (endchar == '*')
-        {
-            if (isNumber(res, l))
-                // * Lazy convert float to long
-                return (1000 * atof(res));
-        }
-        else if (endchar == ')')
-        {
-            if (isNumber(res, l))
-                return atof(res);
-        }
+        // Values with units (decimal): multiply by 1000 for integer precision
+        if (isNumber(res, l))
+            return (long)(1000 * atof(res));
+    }
+    else if (endchar == ')')
+    {
+        // Integer-only values: parse directly without float conversion
+        if (isNumber(res, l))
+            return (long)atoi(res);
     }
     return 0;
 }
 
 bool decode_telegram(int len)
 {
+    // Validate input length to prevent buffer overruns
+    if (len <= 0 || len >= P1_MAXLINELENGTH) {
+        return false;
+    }
+    
     int startChar = FindCharInArrayRev(telegram, '/', len);
     int endChar = FindCharInArrayRev(telegram, '!', len);
     bool validCRCFound = false;
 
-    for (int cnt = 0; cnt < len; cnt++) {
-        Serial.print(telegram[cnt]);
-    }
-    Serial.print("\n");
-
     if (startChar >= 0)
     {
-        // * Start found. Reset CRC calculation
+        // Start of telegram: initialize CRC calculation
         currentCRC = CRC16(0x0000,(unsigned char *) telegram+startChar, len-startChar);
     }
     else if (endChar >= 0)
     {
-        // * Add to crc calc
+        // End of telegram: finalize CRC and validate
         currentCRC = CRC16(currentCRC,(unsigned char*)telegram+endChar, 1);
 
-        char messageCRC[5];
-        strncpy(messageCRC, telegram + endChar + 1, 4);
-
-        messageCRC[4] = 0;   // * Thanks to HarmOtten (issue 5)
-        validCRCFound = (strtoul(messageCRC, NULL, 16) == currentCRC);
-
-        if (validCRCFound)
-            Serial.println(F("CRC Valid!"));
-        else
-            Serial.println(F("CRC Invalid!"));
+        // Check buffer bounds before reading CRC
+        if (endChar + 5 < P1_MAXLINELENGTH) {
+            char messageCRC[5];
+            memset(messageCRC, 0, sizeof(messageCRC));
+            strncpy(messageCRC, telegram + endChar + 1, 4);
+            messageCRC[4] = 0;
+            validCRCFound = (strtoul(messageCRC, NULL, 16) == currentCRC);
+        }
 
         currentCRC = 0;
     }
     else
     {
+        // Middle of telegram: continue CRC calculation
         currentCRC = CRC16(currentCRC, (unsigned char*) telegram, len);
     }
 
-    // 1-0:1.8.1(000992.992*kWh)
-    // 1-0:1.8.1 = Elektra verbruik laag tarief (DSMR v4.0)
     if (strncmp(telegram, "1-0:1.8.1", strlen("1-0:1.8.1")) == 0)
     {
         CONSUMPTION_LOW_TARIF = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:1.8.2(000560.157*kWh)
-    // 1-0:1.8.2 = Elektra verbruik hoog tarief (DSMR v4.0)
     if (strncmp(telegram, "1-0:1.8.2", strlen("1-0:1.8.2")) == 0)
     {
         CONSUMPTION_HIGH_TARIF = getValue(telegram, len, '(', '*');
     }
-	
-    // 1-0:2.8.1(000560.157*kWh)
-    // 1-0:2.8.1 = Elektra teruglevering laag tarief (DSMR v4.0)
+
     if (strncmp(telegram, "1-0:2.8.1", strlen("1-0:2.8.1")) == 0)
     {
         RETURNDELIVERY_LOW_TARIF = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:2.8.2(000560.157*kWh)
-    // 1-0:2.8.2 = Elektra teruglevering hoog tarief (DSMR v4.0)
     if (strncmp(telegram, "1-0:2.8.2", strlen("1-0:2.8.2")) == 0)
     {
         RETURNDELIVERY_HIGH_TARIF = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:1.7.0(00.424*kW) Actueel verbruik
-    // 1-0:1.7.x = Electricity consumption actual usage (DSMR v4.0)
     if (strncmp(telegram, "1-0:1.7.0", strlen("1-0:1.7.0")) == 0)
     {
         ACTUAL_CONSUMPTION = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:2.7.0(00.000*kW) Actuele teruglevering (-P) in 1 Watt resolution
     if (strncmp(telegram, "1-0:2.7.0", strlen("1-0:2.7.0")) == 0)
     {
         ACTUAL_RETURNDELIVERY = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:21.7.0(00.378*kW)
-    // 1-0:21.7.0 = Instantaan vermogen Elektriciteit levering L1
     if (strncmp(telegram, "1-0:21.7.0", strlen("1-0:21.7.0")) == 0)
     {
         L1_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:41.7.0(00.378*kW)
-    // 1-0:41.7.0 = Instantaan vermogen Elektriciteit levering L2
     if (strncmp(telegram, "1-0:41.7.0", strlen("1-0:41.7.0")) == 0)
     {
         L2_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:61.7.0(00.378*kW)
-    // 1-0:61.7.0 = Instantaan vermogen Elektriciteit levering L3
     if (strncmp(telegram, "1-0:61.7.0", strlen("1-0:61.7.0")) == 0)
     {
         L3_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:31.7.0(002*A)
-    // 1-0:31.7.0 = Instantane stroom Elektriciteit L1
     if (strncmp(telegram, "1-0:31.7.0", strlen("1-0:31.7.0")) == 0)
     {
         L1_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
     }
-    // 1-0:51.7.0(002*A)
-    // 1-0:51.7.0 = Instantane stroom Elektriciteit L2
+
     if (strncmp(telegram, "1-0:51.7.0", strlen("1-0:51.7.0")) == 0)
     {
         L2_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
     }
-    // 1-0:71.7.0(002*A)
-    // 1-0:71.7.0 = Instantane stroom Elektriciteit L3
+
     if (strncmp(telegram, "1-0:71.7.0", strlen("1-0:71.7.0")) == 0)
     {
         L3_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
     }
 
-    // 1-0:32.7.0(232.0*V)
-    // 1-0:32.7.0 = Voltage L1
     if (strncmp(telegram, "1-0:32.7.0", strlen("1-0:32.7.0")) == 0)
     {
         L1_VOLTAGE = getValue(telegram, len, '(', '*');
     }
-    // 1-0:52.7.0(232.0*V)
-    // 1-0:52.7.0 = Voltage L2
+
     if (strncmp(telegram, "1-0:52.7.0", strlen("1-0:52.7.0")) == 0)
     {
         L2_VOLTAGE = getValue(telegram, len, '(', '*');
-    }   
-    // 1-0:72.7.0(232.0*V)
-    // 1-0:72.7.0 = Voltage L3
+    }
+
     if (strncmp(telegram, "1-0:72.7.0", strlen("1-0:72.7.0")) == 0)
     {
         L3_VOLTAGE = getValue(telegram, len, '(', '*');
     }
 
-    // 0-1:24.2.1(150531200000S)(00811.923*m3)
-    // 0-1:24.2.1 = Gas (DSMR v4.0) on Kaifa MA105 meter
     if (strncmp(telegram, "0-1:24.2.1", strlen("0-1:24.2.1")) == 0)
     {
         GAS_METER_M3 = getValue(telegram, len, '(', '*');
     }
 
-    // 0-0:96.14.0(0001)
-    // 0-0:96.14.0 = Actual Tarif
     if (strncmp(telegram, "0-0:96.14.0", strlen("0-0:96.14.0")) == 0)
     {
         ACTUAL_TARIF = getValue(telegram, len, '(', ')');
     }
 
-    // 0-0:96.7.21(00003)
-    // 0-0:96.7.21 = Aantal onderbrekingen Elektriciteit
     if (strncmp(telegram, "0-0:96.7.21", strlen("0-0:96.7.21")) == 0)
     {
         SHORT_POWER_OUTAGES = getValue(telegram, len, '(', ')');
     }
 
-    // 0-0:96.7.9(00001)
-    // 0-0:96.7.9 = Aantal lange onderbrekingen Elektriciteit
     if (strncmp(telegram, "0-0:96.7.9", strlen("0-0:96.7.9")) == 0)
     {
         LONG_POWER_OUTAGES = getValue(telegram, len, '(', ')');
     }
 
-    // 1-0:32.32.0(00000)
-    // 1-0:32.32.0 = Aantal korte spanningsdalingen Elektriciteit in fase 1
     if (strncmp(telegram, "1-0:32.32.0", strlen("1-0:32.32.0")) == 0)
     {
         SHORT_POWER_DROPS = getValue(telegram, len, '(', ')');
     }
 
-    // 1-0:32.36.0(00000)
-    // 1-0:32.36.0 = Aantal korte spanningsstijgingen Elektriciteit in fase 1
     if (strncmp(telegram, "1-0:32.36.0", strlen("1-0:32.36.0")) == 0)
     {
         SHORT_POWER_PEAKS = getValue(telegram, len, '(', ')');
@@ -287,6 +264,7 @@ bool decode_telegram(int len)
 
     return validCRCFound;
 }
+
 void processLine(int len) 
 {
     telegram[len] = '\n';
@@ -316,5 +294,3 @@ void read_p1_hardwareserial()
         }
     }
 }
-
-
