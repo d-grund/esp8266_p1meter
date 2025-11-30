@@ -1,29 +1,40 @@
 #define OTA
 #include "settings.h"
-// **********************************
-// * Setup OTA                      *
-// **********************************
 
 void setup_ota()
 {
-    server_println(F("Arduino OTA activated."));
-
-    ArduinoOTA.onStart([]()
-    {
-        server_println(F("Arduino OTA: Start"));
-    });
-
+    server_println(F("OTA Activated"));
     
-    ArduinoOTA.onError([](int error,const char *msg)
-    {
-        server_println("Arduino OTA Error[" + String(error) + "]: " + String(msg));
+    // Port defaults to 8266
+    ArduinoOTA.setPort(8266);
+    
+    // Hostname defaults to esp8266-[ChipID]
+    ArduinoOTA.setHostname(HOSTNAME);
+    
+    // No authentication by default
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    
+    // Password can be set with it's md5 value as well
+    // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+    // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+    
+    ArduinoOTA.onStart([]() {
+        server_println(F("OTA Start"));
     });
-
-    ArduinoOTA.begin(WiFi.localIP(),HOSTNAME,OTA_PASSWORD,InternalStorage);
-    server_println(F("Arduino setup OTA finished"));
+    
+    ArduinoOTA.onEnd([]() {
+        server_println(F("OTA End"));
+    });
+    
+    ArduinoOTA.onError([](ota_error_t error) {
+        server_println("OTA Error");
+    });
+    
+    ArduinoOTA.begin();
+    server_println(F("OTA Setup Finished"));
 }
 
 void ota_poll()
 {
-    ArduinoOTA.poll();
+    ArduinoOTA.handle();
 }

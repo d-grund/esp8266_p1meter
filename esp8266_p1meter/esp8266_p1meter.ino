@@ -107,12 +107,11 @@ void setup()
     ticker.detach();
     digitalWrite(LED_BUILTIN, LOW);
 
+    // * Startup MDNS Service (must be before OTA)
+    setup_mdns();
 
     // * Configure OTA
     setup_ota();
-
-    // * Startup MDNS Service
-    setup_mdns();
 
     // * Attach MQTT client
     setup_mqqt();
@@ -143,28 +142,43 @@ void loop()
     ota_poll();
     MDNS.update();
     long now = millis();
+    
     if(server.hasClient())
     {
-        WiFiClient client = server.available();
-        // Read the first line of HTTP request
-        String req = client.readStringUntil('\r');
-        // First line of HTTP request looks like "GET /path HTTP/1.1"
-        // Retrieve the "/path" part by finding the spaces
-        int addr_start = req.indexOf(' ');
-        int addr_end = req.indexOf(' ', addr_start + 1);
-        req = req.substring(addr_start + 1, addr_end);
-        client.flush();
-        if (req == "/Logs")
+        WiFiClient client = server.accept();
+        
+        if(client)
         {
-            server_sendto_client (&client);
-
-        }
-        else
-        {
-            client.print("HTTP/1.1 404 Not Found\r\n\r\n");
+            // Set timeout for reading
+            client.setTimeout(1000);
+            
+            // Read the first line of HTTP request
+            String req = client.readStringUntil('\r');
+            
+            // First line of HTTP request looks like "GET /path HTTP/1.1"
+            // Retrieve the "/path" part by finding the spaces
+            int addr_start = req.indexOf(' ');
+            int addr_end = req.indexOf(' ', addr_start + 1);
+            
+            if (addr_start != -1 && addr_end != -1)
+            {
+                req = req.substring(addr_start + 1, addr_end);
+                client.flush();
+                
+                if (req == "/Logs")
+                {
+                    server_sendto_client(&client);
+                }
+                else
+                {
+                    client.print("HTTP/1.1 404 Not Found\r\n\r\n");
+                }
+            }
+            
+            // Close connection
+            client.stop();
         }
     }
-
 
     // Enhanced MQTT connection handling with exponential backoff
     handle_mqtt_connection(now);

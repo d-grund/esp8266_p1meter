@@ -84,7 +84,12 @@ void server_sendto_client ( WiFiClient *client)
     
     htmlBody += "</div>";
     
-    client->print(htmlHead);
-    client->print(htmlBody);
-    client->print(htmlTail);
+    // Send response with proper error handling
+    if (client && client->connected())
+    {
+        size_t sent = client->print(htmlHead);
+        sent += client->print(htmlBody);
+        sent += client->print(htmlTail);
+        client->flush();
+    }
 }

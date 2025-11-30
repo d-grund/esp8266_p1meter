@@ -10,7 +10,7 @@ This causes the used SoftwareSerial to struggle to keep up and thus only receive
 
 # Getting started
 This setup requires:
-- An esp8266 (nodeMcu and Wemos d1 mini have been tested)
+- An esp8266 (nodeMcu, Wemos d1 mini and AZDelivery D1 Mini NodeMcu met ESP8266-12F have been tested)
 - A 10k ohm resistor
 - A 4 pin RJ11 or 6 pin RJ12 cable
 
@@ -30,6 +30,20 @@ Finishing off:
 - Configure your wifi and Mqtt settings
 - To check if everything is up and running you can listen to the MQTT topic `hass/status`, on startup a single message is sent.
 
+## Web Interface - Logs
+
+The ESP8266 provides a web-based logs viewer that displays the last 80 log messages. The logs show all system activities including:
+- WiFi connection status
+- MQTT connection and reconnection attempts
+- Metric data being sent to the broker
+- Configuration changes
+- OTA firmware update status
+
+**Access the logs:**
+- Navigate to `http://<esp8266-ip>/Logs` in your browser
+- The page automatically refreshes every 30 seconds to show the latest messages
+- All Serial output is captured and displayed in the web interface
+
 ## Connecting to the P1 meter
 Connect the esp8266 to an RJ11 cable/connector following the diagram.
 
@@ -42,7 +56,7 @@ Connect the esp8266 to an RJ11 cable/connector following the diagram.
 
 On most Landys and Gyr models a 10K resistor should be used between the ESP's 3.3v and the p1's DATA (RXD) pin. Many howto's mention RTS requires 5V (VIN) to activate the P1 port, but for me 3V3 suffices.
 
-![Wiring](https://raw.githubusercontent.com/daniel-jong/esp8266_p1meter/master/assets/esp8266_p1meter_bb.png)
+![Wiring](https://raw.githubusercontent.com/d-grund/esp8266_p1meter/master/assets/esp8266_p1meter_bb.png)
 
 ### Optional: Powering the esp8266 using your DSMR5+ meter 
 <details><summary>Expand to see wiring description</summary>
@@ -59,7 +73,7 @@ When using a 6 pin cable you can use the power source provided by the meter.
 | 5 - RXD (data) | RX (gpio3) |
 | 6 - GND  | GND  |
 
-![Wiring powered by meter](https://raw.githubusercontent.com/daniel-jong/esp8266_p1meter/master/assets/esp8266_p1meter_bb_PoweredByMeter.png)
+![Wiring powered by meter](https://raw.githubusercontent.com/d-grund/esp8266_p1meter/master/assets/esp8266_p1meter_bb_PoweredByMeter.png)
 
 </p>
 </details>
@@ -95,7 +109,7 @@ sensors/power/p1meter/short_power_peaks 0
 
 ## Home Assistant Configuration
 
-Use this [example](https://raw.githubusercontent.com/daniel-jong/esp8266_p1meter/master/assets/p1_sensors.yaml) for home assistant's `sensor.yaml`
+Use this [example](https://raw.githubusercontent.com/d-grund/esp8266_p1meter/master/assets/p1_sensors.yaml) for home assistant's `sensor.yaml`
 
 The automatons are yours to create.
 And always remember that sending alerts in case of a power outtage only make sense when you own a UPS battery :)
@@ -105,6 +119,7 @@ And always remember that sending alerts in case of a power outtage only make sen
 This sketch is mostly copied and pasted from several other projects.
 Standing on the heads of giants, big thanks and great respect to the writers and/or creators of:
 
+- https://github.com/daniel-jong/esp8266_p1meter
 - https://github.com/jantenhove/P1-Meter-ESP8266
 - https://github.com/neographikal/P1-Meter-ESP8266-MQTT
 - http://gejanssen.com/howto/Slimme-meter-uitlezen/
