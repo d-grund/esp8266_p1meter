@@ -7,7 +7,7 @@ Comprehensive unit test suite for `P1.cpp` that uses real DSMR (Dutch Smart Mete
 
 ### 1. `/test/test_p1.cpp` - Main Test File
 - **Lines**: 750+
-- **Test Cases**: 28 (27 individual + 1 integration test)
+- **Test Cases**: 28 (27 individual )
 - **Framework**: Unity by ThrowTheSwitch
 - **Platform**: Native (GCC/MinGW) - no hardware required
 - **Status**: ✅ All tests PASSING
@@ -57,7 +57,7 @@ All DSMR meter variables defined as globals (30 total):
 - **Gas**: GAS_METER_M3
 - **Quality Metrics**: ACTUAL_TARIF, SHORT_POWER_OUTAGES, LONG_POWER_OUTAGES, SHORT_POWER_DROPS, SHORT_POWER_PEAKS
 
-## Test Cases (28 Total)
+## Test Cases (27 Total)
 
 ### Category 1: CRC and Utility Functions (6 tests)
 - `test_crc16_basic` - CRC16 algorithm validation
@@ -98,8 +98,6 @@ All DSMR meter variables defined as globals (30 total):
 - `test_parse_short_power_drops` - Count of voltage drops
 - `test_parse_short_power_peaks` - Count of voltage peaks
 
-### Category 7: Integration Test (1 test)
-- `test_parse_complete_telegram` - **Comprehensive end-to-end test** parsing a complete real 25-line DSMR telegram with all meter readings
 
 ## Real Telegram Examples
 
@@ -116,30 +114,6 @@ Each test uses authentic DSMR format with OBIS codes:
 "0-1:24.2.1(150531200000S)(00811.923*m3)"  # Gas meter
 "0-0:96.14.0(0001)"             # Actual tariff
 "0-0:96.7.21(00003)"            # Short power outages
-```
-
-### Complete Telegram Integration Test
-Real XMX5L meter telegram (25 lines):
-```
-/XMX5LGBBFG1012463817          # Header
-1-3:0.2.8(42)                  # Version
-0-0:1.0.0(180624024002S)       # Timestamp
-...
-1-0:1.8.1(002200.945*kWh)      # Low tariff: 2200.945 kWh
-1-0:1.8.2(001961.604*kWh)      # High tariff: 1961.604 kWh
-1-0:2.8.1(000000.000*kWh)      # Return low: 0 kWh
-1-0:2.8.2(000000.000*kWh)      # Return high: 0 kWh
-0-0:96.14.0(0001)              # Tariff: 1
-1-0:1.7.0(00.378*kW)           # Actual consumption: 0.378 kW
-1-0:2.7.0(00.000*kW)           # Actual return: 0 kW
-0-0:96.7.21(00003)             # Short outages: 3
-0-0:96.7.9(00001)              # Long outages: 1
-1-0:32.32.0(00000)             # Drops: 0
-1-0:32.36.0(00000)             # Peaks: 0
-1-0:31.7.0(002*A)              # L1 current: 2 A
-1-0:21.7.0(00.378*kW)          # L1 power: 0.378 kW
-0-1:24.2.1(180624020000S)(00968.481*m3)  # Gas meter: 968.481 m³
-!8711                          # Footer with CRC
 ```
 
 ## Value Conversion Examples
@@ -241,8 +215,8 @@ void tearDown(void) {
 ├─────────────────────────────────────────┤
 │  P1 Parsing Functions (from P1.cpp)     │
 │  ├─ CRC16()                            │
-│  ├─ getValue() [ENHANCED]              │
-│  ├─ decode_telegram() [ENHANCED]       │
+│  ├─ getValue()                         │
+│  ├─ decode_telegram()                  │
 │  └─ 30 Global Variables                │
 ├─────────────────────────────────────────┤
 │  28 Test Cases                          │
@@ -251,8 +225,7 @@ void tearDown(void) {
 │  ├─ 3 Power Tests                      │
 │  ├─ 3 Current Tests                    │
 │  ├─ 3 Voltage Tests                    │
-│  ├─ 6 Quality Metric Tests             │
-│  └─ 1 Integration Test                 │
+│  └─ 6 Quality Metric Tests             │
 └─────────────────────────────────────────┘
         ↓
     Unity Framework
@@ -264,14 +237,13 @@ void tearDown(void) {
 
 ## Current Status
 
-✅ **All 28 tests PASS**
+✅ **All 27 tests PASS**
 - ✅ Utility functions (6/6)
 - ✅ Consumption parsing (6/6)
 - ✅ Power parsing (3/3)
 - ✅ Current parsing (3/3)
 - ✅ Voltage parsing (3/3)
 - ✅ Quality metrics (6/6)
-- ✅ Integration test (1/1)
 - ✅ No memory leaks or cleanup crashes
 - ✅ Execution time: ~1 second
 

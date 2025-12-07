@@ -1,5 +1,6 @@
 #define P1
 #include "settings.h"
+
 // **********************************
 // * P1                             *
 // **********************************
@@ -7,33 +8,35 @@ char telegram[P1_MAXLINELENGTH];
 // * Set during CRC checking
 unsigned int currentCRC = 0;
 // * Set to store the data values read
-long CONSUMPTION_LOW_TARIF;
-long CONSUMPTION_HIGH_TARIF;
+std::map<std::string,long> P1Values = {
+   {"consumption_low_tarif", 0},
+   {"consumption_high_tarif", 0},
+  
+   {"returndelivery_low_tarif", 0},
+   {"returndelivery_high_tarif", 0},
+  
+   {"actual_consumption", 0},
+   {"actual_returndelivery", 0},
+   {"actual_tarif_group", 0},
+ 
+   {"l1_instant_power_usage", 0},
+   {"l2_instant_power_usage", 0},
+   {"l3_instant_power_usage", 0},
+   {"l1_instant_power_current", 0},
+   {"l2_instant_power_current", 0},
+   {"l3_instant_power_current", 0},
+ 
+   {"l1_voltage", 0},
+   {"l2_voltage", 0},
+   {"l3_voltage", 0},
+    
+   {"gas_meter_m3", 0},
 
-long RETURNDELIVERY_LOW_TARIF;
-long RETURNDELIVERY_HIGH_TARIF;
-
-long ACTUAL_CONSUMPTION;
-long ACTUAL_RETURNDELIVERY;
-long GAS_METER_M3;
-
-long L1_INSTANT_POWER_USAGE;
-long L2_INSTANT_POWER_USAGE;
-long L3_INSTANT_POWER_USAGE;
-long L1_INSTANT_POWER_CURRENT;
-long L2_INSTANT_POWER_CURRENT;
-long L3_INSTANT_POWER_CURRENT;
-long L1_VOLTAGE;
-long L2_VOLTAGE;
-long L3_VOLTAGE;
-
-// Set to store data counters read
-long ACTUAL_TARIF;
-long SHORT_POWER_OUTAGES;
-long LONG_POWER_OUTAGES;
-long SHORT_POWER_DROPS;
-long SHORT_POWER_PEAKS;
-
+   {"short_power_outages", 0},
+   {"long_power_outages", 0},
+   {"short_power_drops", 0},
+   {"short_power_peaks", 0}
+};
 
 unsigned int CRC16(unsigned int crc, unsigned char *buf, int len)
 {
@@ -159,107 +162,107 @@ bool decode_telegram(int len)
 
     if (strncmp(telegram, "1-0:1.8.1", strlen("1-0:1.8.1")) == 0)
     {
-        CONSUMPTION_LOW_TARIF = getValue(telegram, len, '(', '*');
+        P1Values["consumption_low_tarif"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:1.8.2", strlen("1-0:1.8.2")) == 0)
     {
-        CONSUMPTION_HIGH_TARIF = getValue(telegram, len, '(', '*');
+        P1Values["consumption_high_tarif"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:2.8.1", strlen("1-0:2.8.1")) == 0)
     {
-        RETURNDELIVERY_LOW_TARIF = getValue(telegram, len, '(', '*');
+       P1Values["returndelivery_low_tarif"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:2.8.2", strlen("1-0:2.8.2")) == 0)
     {
-        RETURNDELIVERY_HIGH_TARIF = getValue(telegram, len, '(', '*');
+        P1Values["returndelivery_high_tarif"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:1.7.0", strlen("1-0:1.7.0")) == 0)
     {
-        ACTUAL_CONSUMPTION = getValue(telegram, len, '(', '*');
+        P1Values["actual_consumption"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:2.7.0", strlen("1-0:2.7.0")) == 0)
     {
-        ACTUAL_RETURNDELIVERY = getValue(telegram, len, '(', '*');
+        P1Values["actual_returndelivery"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:21.7.0", strlen("1-0:21.7.0")) == 0)
     {
-        L1_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
+        P1Values["l1_instant_power_usage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:41.7.0", strlen("1-0:41.7.0")) == 0)
     {
-        L2_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
+        P1Values["l2_instant_power_usage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:61.7.0", strlen("1-0:61.7.0")) == 0)
     {
-        L3_INSTANT_POWER_USAGE = getValue(telegram, len, '(', '*');
+        P1Values["l3_instant_power_usage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:31.7.0", strlen("1-0:31.7.0")) == 0)
     {
-        L1_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
+        P1Values["l1_instant_power_current"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:51.7.0", strlen("1-0:51.7.0")) == 0)
     {
-        L2_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
+        P1Values["l2_instant_power_current"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:71.7.0", strlen("1-0:71.7.0")) == 0)
     {
-        L3_INSTANT_POWER_CURRENT = getValue(telegram, len, '(', '*');
+        P1Values["l3_instant_power_current"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:32.7.0", strlen("1-0:32.7.0")) == 0)
     {
-        L1_VOLTAGE = getValue(telegram, len, '(', '*');
+        P1Values["l1_voltage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:52.7.0", strlen("1-0:52.7.0")) == 0)
     {
-        L2_VOLTAGE = getValue(telegram, len, '(', '*');
+        P1Values["l2_voltage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "1-0:72.7.0", strlen("1-0:72.7.0")) == 0)
     {
-        L3_VOLTAGE = getValue(telegram, len, '(', '*');
+        P1Values["l3_voltage"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "0-1:24.2.1", strlen("0-1:24.2.1")) == 0)
     {
-        GAS_METER_M3 = getValue(telegram, len, '(', '*');
+        P1Values["gas_meter_m3"] = getValue(telegram, len, '(', '*');
     }
 
     if (strncmp(telegram, "0-0:96.14.0", strlen("0-0:96.14.0")) == 0)
     {
-        ACTUAL_TARIF = getValue(telegram, len, '(', ')');
+        P1Values["actual_tarif"] = getValue(telegram, len, '(', ')');
     }
 
     if (strncmp(telegram, "0-0:96.7.21", strlen("0-0:96.7.21")) == 0)
     {
-        SHORT_POWER_OUTAGES = getValue(telegram, len, '(', ')');
+        P1Values["short_power_outages"] = getValue(telegram, len, '(', ')');
     }
 
     if (strncmp(telegram, "0-0:96.7.9", strlen("0-0:96.7.9")) == 0)
     {
-        LONG_POWER_OUTAGES = getValue(telegram, len, '(', ')');
+        P1Values["long_power_outages"] = getValue(telegram, len, '(', ')');
     }
 
     if (strncmp(telegram, "1-0:32.32.0", strlen("1-0:32.32.0")) == 0)
     {
-        SHORT_POWER_DROPS = getValue(telegram, len, '(', ')');
+        P1Values["short_power_drops"] = getValue(telegram, len, '(', ')');
     }
 
     if (strncmp(telegram, "1-0:32.36.0", strlen("1-0:32.36.0")) == 0)
     {
-        SHORT_POWER_PEAKS = getValue(telegram, len, '(', ')');
+        P1Values["short_power_peaks"] = getValue(telegram, len, '(', ')');
     }
 
     return validCRCFound;

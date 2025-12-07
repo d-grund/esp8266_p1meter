@@ -3,6 +3,8 @@
 // **********************************
 #ifndef SETTINGS_H
 #define SETTINGS_H
+
+
 #include <FS.h>
 #include <EEPROM.h>
 #include <DNSServer.h>
@@ -12,6 +14,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <PubSubClient.h>
+
 
 #ifdef OTA
 #include <ArduinoOTA.h>
@@ -27,6 +30,7 @@ extern WiFiServer server;
 extern WiFiManager wifiManager;
 // * MQTT client
 extern PubSubClient mqtt_client;
+
 // * Ticker
 void tick();
 // * MQTT
@@ -115,35 +119,12 @@ extern char MQTT_PASS[32];
 // * Set to store received telegram
 extern char telegram[P1_MAXLINELENGTH];
 #endif
-#if defined(P1) || defined(MQTT)
+
 // * Set to store the data values read
-extern long CONSUMPTION_LOW_TARIF;
-extern long CONSUMPTION_HIGH_TARIF;
+#include <iostream>
+#include <map>
+extern std::map<std::string,long> P1Values;
 
-extern long RETURNDELIVERY_LOW_TARIF;
-extern long RETURNDELIVERY_HIGH_TARIF;
-
-extern long ACTUAL_CONSUMPTION;
-extern long ACTUAL_RETURNDELIVERY;
-extern long GAS_METER_M3;
-
-extern long L1_INSTANT_POWER_USAGE;
-extern long L2_INSTANT_POWER_USAGE;
-extern long L3_INSTANT_POWER_USAGE;
-extern long L1_INSTANT_POWER_CURRENT;
-extern long L2_INSTANT_POWER_CURRENT;
-extern long L3_INSTANT_POWER_CURRENT;
-extern long L1_VOLTAGE;
-extern long L2_VOLTAGE;
-extern long L3_VOLTAGE;
-
-// Set to store data counters read
-extern long ACTUAL_TARIF;
-extern long SHORT_POWER_OUTAGES;
-extern long LONG_POWER_OUTAGES;
-extern long SHORT_POWER_DROPS;
-extern long SHORT_POWER_PEAKS;
-#endif
 
 
 // ******************************************

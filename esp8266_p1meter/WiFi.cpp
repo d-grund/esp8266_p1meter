@@ -13,7 +13,7 @@ String htmlTail = "</body></html>\r\n\r\n";
 WiFiServer server(80);
 
 // * Message buffer to store last 80 messages
-#define MESSAGE_BUFFER_SIZE 80
+#define MESSAGE_BUFFER_SIZE 30
 String messageBuffer[MESSAGE_BUFFER_SIZE];
 int messageBufferIndex = 0;
 
@@ -81,7 +81,29 @@ void server_sendto_client ( WiFiClient *client)
             htmlBody += messageBuffer[index] + "\n";
         }
     }
-    
+    htmlBody += "<table><tr><td colspan=\"4\"><b>Current P1 Values:</b></td></tr>";
+    int count = 0;
+    for (auto pair = P1Values.begin(); pair != P1Values.end(); ++pair) {
+        // Start a new table row for every two key-value pairs
+        if(count % 2 == 0)
+        {
+             htmlBody += "<tr>";
+        }
+        // Output key and value in table cells
+        htmlBody += "<td>" + String(pair->first.c_str()) + "</td><td>" + String(pair->second) + "</td>";
+        // Close row after two key-value pairs
+        if(count % 2 == 1)
+        {
+             htmlBody += "</tr>";
+        }
+        count++;
+    }
+    // If the number of elements is odd, close the last row
+    if(count % 2 !=0)
+    {
+         htmlBody += "</tr>";
+    }
+    htmlBody += "</table>";
     htmlBody += "</div>";
     
     // Send response with proper error handling

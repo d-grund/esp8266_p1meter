@@ -25,7 +25,7 @@ void setup_mqqt()
 // * Send a message to a broker topic
 void send_mqtt_message(const char *topic, char *payload)
 {
-    server_println("MQTT Outgoing on " + String(topic) + ": " + String(payload));
+    //server_println("MQTT Outgoing on " + String(topic) + ": " + String(payload));
 
     bool result = mqtt_client.publish(topic, payload, false);
 
@@ -149,7 +149,7 @@ void handle_mqtt_connection(unsigned long now)
 
 void send_metric(String name, long metric)
 {
-    server_println("Sending metric to broker: " + name + "=" + String(metric));
+    //server_println("Sending metric to broker: " + name + "=" + String(metric));
 
     char output[10];
     ltoa(metric, output, sizeof(output));
@@ -160,28 +160,8 @@ void send_metric(String name, long metric)
 
 void send_data_to_broker()
 {
-    send_metric("consumption_low_tarif", CONSUMPTION_LOW_TARIF);
-    send_metric("consumption_high_tarif", CONSUMPTION_HIGH_TARIF);
-    send_metric("returndelivery_low_tarif", RETURNDELIVERY_LOW_TARIF);
-    send_metric("returndelivery_high_tarif", RETURNDELIVERY_HIGH_TARIF);
-    send_metric("actual_consumption", ACTUAL_CONSUMPTION);
-    send_metric("actual_returndelivery", ACTUAL_RETURNDELIVERY);
-
-    send_metric("l1_instant_power_usage", L1_INSTANT_POWER_USAGE);
-    send_metric("l2_instant_power_usage", L2_INSTANT_POWER_USAGE);
-    send_metric("l3_instant_power_usage", L3_INSTANT_POWER_USAGE);
-    send_metric("l1_instant_power_current", L1_INSTANT_POWER_CURRENT);
-    send_metric("l2_instant_power_current", L2_INSTANT_POWER_CURRENT);
-    send_metric("l3_instant_power_current", L3_INSTANT_POWER_CURRENT);
-    send_metric("l1_voltage", L1_VOLTAGE);
-    send_metric("l2_voltage", L2_VOLTAGE);
-    send_metric("l3_voltage", L3_VOLTAGE);
+    for(const auto& pair : P1Values) {
+        send_metric(String(pair.first.c_str()), pair.second);
+    }
     
-    send_metric("gas_meter_m3", GAS_METER_M3);
-
-    send_metric("actual_tarif_group", ACTUAL_TARIF);
-    send_metric("short_power_outages", SHORT_POWER_OUTAGES);
-    send_metric("long_power_outages", LONG_POWER_OUTAGES);
-    send_metric("short_power_drops", SHORT_POWER_DROPS);
-    send_metric("short_power_peaks", SHORT_POWER_PEAKS);
 }
