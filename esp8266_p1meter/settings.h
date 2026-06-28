@@ -14,6 +14,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <PubSubClient.h>
+#include <Time.h>
 
 
 #ifdef OTA
@@ -48,8 +49,8 @@ bool isNumber(char *res, int len);
 int FindCharInArrayRev(char array[], char c, int len);
 long getValue(char *buffer, int maxlen, char startchar, char endchar);
 bool decode_telegram(int len);
-void processLine(int len);
-void read_p1_hardwareserial();
+void processLine(int len, long now);
+void read_p1_hardwareserial(long now);
 //WiFi
 void enterConfigMode();
 void save_wifi_config_callback ();
@@ -63,7 +64,7 @@ void write_eeprom(int offset, int len, String value);
 
 
 // Update treshold in milliseconds, messages will only be sent on this interval
-#define UPDATE_INTERVAL 60000  // 1 minute
+#define UPDATE_INTERVAL 30000  // 30 seconds
 //#define UPDATE_INTERVAL 300000 // 5 minutes
 
 // * Baud rate for both hardware and software 
@@ -113,12 +114,12 @@ extern char MQTT_PORT[6];
 extern char MQTT_USER[32];
 extern char MQTT_PASS[32];
 #endif
-#ifdef P1
+
 // * Max telegram length
 #define P1_MAXLINELENGTH 1050
 // * Set to store received telegram
 extern char telegram[P1_MAXLINELENGTH];
-#endif
+extern int telegramRead;  // Count number of telegrams read
 
 // * Set to store the data values read
 #include <iostream>

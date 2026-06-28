@@ -8,6 +8,7 @@
 
 void setup()
 {
+
     // * Configure EEPROM
     EEPROM.begin(512);
 
@@ -65,7 +66,7 @@ void setup()
         
     // * Set WifiHostName
     WiFi.setHostname(HOSTNAME);
-
+    wifiManager.setConnectTimeout(30);
     // * Fetches SSID and pass and tries to connect
     // * Reset when no connection after 10 seconds
     if(settings_available == "0")
@@ -102,7 +103,15 @@ void setup()
 
     // * If you get here you have connected to the WiFi
     server_println(F("Connected to WIFI..."));
-
+    const char* ntpServer = "pool.ntp.org";
+    const long  gmtOffset_sec = 3600;   //Replace with your GMT offset (seconds)
+    const int   daylightOffset_sec = 0;  //Replace with your daylight offset (seconds)
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    server_println("Waiting for NTP time sync...");
+    while (time(nullptr) < 8 * 3600 * 2) {
+        delay(500);
+        server_print(".");
+    }
     // * Keep LED on
     ticker.detach();
     digitalWrite(LED_BUILTIN, LOW);
@@ -119,7 +128,7 @@ void setup()
     // * Setup MQTT
     server_println("MQTT connecting to: " + String(MQTT_HOST) + ":" + String(MQTT_PORT));
     IPAddress resolvedIP;
-    if(!WiFi.hostByName(MQTT_HOST, resolvedIP))
+    if(!WiFi.hostByName(MQTT_HOST, resolvedIP) )
     {
       server_println("Unable to resolve host, connect using name: " + String(MQTT_HOST));
       mqtt_client.setServer(MQTT_HOST, atoi(MQTT_PORT));
@@ -164,15 +173,23 @@ void loop()
             {
                 req = req.substring(addr_start + 1, addr_end);
                 client.flush();
-                
-                if (req == "/Logs")
+                if(req == "/" || req == "/index.html" )
                 {
                     server_sendto_client(&client);
+                }
+                else if (req == "/reset")
+                {
+                    client.print("HTTP/1.1 200 OK\r\n\r\n");
+                    client.print("Device will reset now.");
+                    client.stop();
+                    delay(100);
+                    ESP.restart();
                 }
                 else
                 {
                     client.print("HTTP/1.1 404 Not Found\r\n\r\n");
                 }
+                
             }
             
             // Close connection
@@ -183,7 +200,7 @@ void loop()
     // Enhanced MQTT connection handling with exponential backoff
     handle_mqtt_connection(now);
     
-    if (now - LAST_UPDATE_SENT > UPDATE_INTERVAL) {
-        read_p1_hardwareserial();
-    }
+    //if (now - LAST_UPDATE_SENT > UPDATE_INTERVAL) {
+        read_p1_hardwareserial(now);
+   // }
 }

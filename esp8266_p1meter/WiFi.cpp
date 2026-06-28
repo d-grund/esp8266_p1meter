@@ -1,3 +1,4 @@
+#define WIFI
 #include "settings.h"
 // **********************************
 // * WIFI                           *
@@ -53,6 +54,17 @@ void enterConfigMode()
     wifiManager.startConfigPortal();
 }
 
+String GetTimeString()
+{
+    time_t rawtime;
+    struct tm * timeinfo;
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    String timeString = String(asctime(timeinfo));
+    timeString.remove(timeString.length() - 1); // Remove trailing newline
+    return timeString;
+}
+
 void server_print(String message)
 {
     // Print to serial (without newline)
@@ -65,7 +77,7 @@ void server_println(String message)
     Serial.println(message);
     
     // Add message to circular buffer
-    messageBuffer[messageBufferIndex] = message;
+    messageBuffer[messageBufferIndex] = GetTimeString() + ": " + message;
     messageBufferIndex = (messageBufferIndex + 1) % MESSAGE_BUFFER_SIZE;
 }
 
@@ -81,7 +93,8 @@ void server_sendto_client ( WiFiClient *client)
             htmlBody += messageBuffer[index] + "\n";
         }
     }
-    htmlBody += "<table><tr><td colspan=\"4\"><b>Current P1 Values:</b></td></tr>";
+    htmlBody += "<br/>Telegram "+String(telegramRead)+": "+ String(telegram) +"<br/>";
+    htmlBody += "<br/><table><tr><td colspan=\"4\"><b>Current P1 Values:</b></td></tr>";
     int count = 0;
     for (auto pair = P1Values.begin(); pair != P1Values.end(); ++pair) {
         // Start a new table row for every two key-value pairs

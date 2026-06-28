@@ -19,6 +19,8 @@ long LAST_UPDATE_SENT = 0;
 
 void setup_mqqt()
 {
+    mqtt_client.setKeepAlive(60);
+    mqtt_client.setSocketTimeout(10);
     mqtt_client.setClient(espClient);
 }
 
@@ -126,8 +128,19 @@ void handle_mqtt_connection(unsigned long now)
         mqtt_connection_state = MQTT_STATE_CONNECTING;
 
         server_println("MQTT: Reconnect attempt " + String(MQTT_RECONNECT_TRIES) + "/" + String(MQTT_MAX_RECONNECT_TRIES) + " (backoff: " + String(backoff) + " ms)");
-
+ /*       IPAddress resolvedIP;
+        if(!WiFi.hostByName(MQTT_HOST, resolvedIP) )
+        {
+            server_println("Unable to resolve host, connect using name: " + String(MQTT_HOST));
+            mqtt_client.setServer(MQTT_HOST, atoi(MQTT_PORT));
+        }
+        else
+        {
+            mqtt_client.setServer(resolvedIP, atoi(MQTT_PORT));
+        }
+            */
         int status = mqtt_reconnect();
+
 
         if (status == 0) {
             mqtt_connection_state = MQTT_STATE_CONNECTED;

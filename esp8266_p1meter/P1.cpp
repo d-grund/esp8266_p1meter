@@ -7,6 +7,8 @@
 char telegram[P1_MAXLINELENGTH];
 // * Set during CRC checking
 unsigned int currentCRC = 0;
+//count number of telegrams read
+int telegramRead=0;
 // * Set to store the data values read
 std::map<std::string,long> P1Values = {
    {"consumption_low_tarif", 0},
@@ -268,24 +270,25 @@ bool decode_telegram(int len)
     return validCRCFound;
 }
 
-void processLine(int len) 
+void processLine(int len, long now) 
 {
     telegram[len] = '\n';
     telegram[len + 1] = 0;
     yield();
 
     bool result = decode_telegram(len + 1);
-    if (result) {
+    if (result && (now - LAST_UPDATE_SENT >= UPDATE_INTERVAL)) {
         send_data_to_broker();
         LAST_UPDATE_SENT = millis();
     }
 }
 
-void read_p1_hardwareserial()
+void read_p1_hardwareserial(long now)
 {
     if (Serial.available())
     {
         memset(telegram, 0, sizeof(telegram));
+        telegramRead++;  // Increment telegram read count
 
         while (Serial.available())
         {
@@ -293,7 +296,7 @@ void read_p1_hardwareserial()
             int len = Serial.readBytesUntil('\n', telegram, P1_MAXLINELENGTH);
             ESP.wdtEnable(1);
 
-            processLine(len);
+            processLine(len, now);
         }
     }
 }
